@@ -77,14 +77,9 @@ python src/main.py --log-dir resultados/logs
 
 Los logs se guardan en `logs/DD_MM_YYYY/HHhrs/ruta_optima.log` y en `logs/last_ruta_optima.log`. La consola muestra eventos con color cuando `colorama` esta disponible; los archivos permanecen sin colores.
 
-## Complejidad
+## Análisis técnico
 
-Para `n` etapas y presupuesto entero `B`, la tabla tiene `(n + 1)(B + 1)` estados y cada estado se calcula en tiempo constante. Por tanto:
-
-- Tiempo: `O(n * B)`.
-- Espacio: `O(n * B)` por la tabla de decisiones usada para reconstruir la solucion.
-
-Es pseudo-polinomial: si `B` se representa en binario, el costo depende del valor numerico de `B`, no solo del numero de bits.
+La formalización, reducción de NP-dureza, recurrencia y análisis de complejidad están documentados en [demostracion_np_dureza.md](docs/demostracion_np_dureza.md). La arquitectura y el funcionamiento interno están descritos en [MANUAL_TECNICO.md](docs/MANUAL_TECNICO.md).
 
 ## Entrada oficial de G3
 
