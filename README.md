@@ -22,37 +22,60 @@ src/ruta_optima/
   domain/          modelos y validaciones del dominio
   application/     caso de uso de programacion dinamica
   infrastructure/  adaptador de lectura JSON
-  presentation/    interfaz de linea de comandos
+
+src/main.py         punto de entrada principal de la CLI
 ```
 
 Las dependencias apuntan hacia adentro: la DP no conoce JSON ni la CLI, y los modelos no dependen de infraestructura. Las constantes globales viven en `constants/base.py`. El puerto `ScenarioReader` define la lectura requerida por la aplicacion; `JsonScenarioReader` es su adaptador concreto.
 
-## Ejecucion
+## Manual de usuario
+
+### Requisitos
+
+- Python 3.10 o superior.
+- Git.
+- Linux, macOS o Windows.
+
+### Instalacion
 
 ```bash
+git clone https://github.com/JacoboArroyave/proyecto-analisis-2026-2.git
+cd proyecto-analisis-2026-2
 python -m venv .venv
 source .venv/bin/activate
+python -m pip install --upgrade pip
 python -m pip install -e .
-python -m ruta_optima.presentation.cli
 ```
 
-Sin argumentos, la aplicacion lee automaticamente el unico escenario oficial: `data/entrada_G3_mochila_20_nodos.json`. La consola muestra un resumen conciso con resultados, tiempo de ejecución y cantidad de estados de la traza. La traza completa permanece en los logs.
+En Windows PowerShell, activar el entorno con `.venv\\Scripts\\Activate.ps1`.
 
-Para imprimir tambien los 1460 estados de la traza:
+### Ejecucion
+
+Desde la raiz del proyecto:
 
 ```bash
-python -m ruta_optima.presentation.cli --full-output
+python src/main.py
+```
+
+La aplicacion lee automaticamente `data/entrada_G3_mochila_20_nodos.json` y muestra un resumen conciso con resultados, tiempo de ejecucion y cantidad de estados de la traza.
+
+Para imprimir tambien la traza completa:
+
+```bash
+python src/main.py --full-output
 ```
 
 ## Logging
 
 Cada ejecución escribe un archivo histórico en `logs/DD_MM_YYYY/HHhrs/ruta_optima.log` y sobrescribe `logs/last_ruta_optima.log` con la ejecución más reciente. La consola muestra eventos `INFO` con color cuando `colorama` está instalada; el archivo conserva también los estados `DEBUG` de la tabla DP.
 
-Para usar otro directorio:
+Para usar otro directorio de logs:
 
 ```bash
-python -m ruta_optima.presentation.cli --log-dir resultados/logs
+python src/main.py --log-dir resultados/logs
 ```
+
+Los logs se guardan en `logs/DD_MM_YYYY/HHhrs/ruta_optima.log` y en `logs/last_ruta_optima.log`. La consola muestra eventos con color cuando `colorama` esta disponible; los archivos permanecen sin colores.
 
 ## Complejidad
 
@@ -68,7 +91,7 @@ Es pseudo-polinomial: si `B` se representa en binario, el costo depende del valo
 La entrada oficial `data/entrada_G3_mochila_20_nodos.json` contiene tambien datos de auditoria para la Parte 2. En este proyecto solo se leen `parametros.presupuesto_aceleracion_B` y los cuatro campos de aceleracion de cada objeto en `etapas`; los datos de riesgos y auditoria se ignoran porque corresponden al compañero encargado de esa parte.
 
 ```bash
-python -m ruta_optima.presentation.cli data/entrada_G3_mochila_20_nodos.json > resultados/entrada_G3_parte1.json
+python src/main.py data/entrada_G3_mochila_20_nodos.json > resultados/entrada_G3_parte1.json
 ```
 
 La logica no necesita editarse para otros casos con el mismo formato y la salida se puede conservar como evidencia.

@@ -99,8 +99,7 @@ Proyecto/
 │       ├── infrastructure/
 │       │   ├── json_scenario.py
 │       │   └── logging_config.py
-│       └── presentation/
-│           └── cli.py
+│       └── main.py
 ├── .gitignore
 ├── pyproject.toml
 └── README.md
@@ -136,9 +135,9 @@ Implementa `JsonScenarioReader`, que traduce la entrada oficial de la profesora 
 
 Configura `SafeLogger`, que escribe un archivo histórico en `logs/DD_MM_YYYY/HHhrs/`, actualiza `logs/last_ruta_optima.log` y muestra eventos `INFO` coloreados en consola cuando `colorama` está disponible. Si la dependencia no está instalada, utiliza salida sin colores.
 
-### `src/ruta_optima/presentation/cli.py`
+### `src/main.py`
 
-Expone el punto de entrada ejecutable, configura logging, carga el escenario mediante `JsonScenarioReader`, ejecuta el caso de uso y serializa el resultado.
+Es el punto de entrada principal: configura logging, carga el escenario mediante `JsonScenarioReader`, ejecuta el caso de uso y serializa el resultado.
 
 ---
 
@@ -186,118 +185,9 @@ Su invariante exige `budget >= 0`.
 
 ### 3.3 `OptimizeAcceleration`
 
-Caso de uso de aplicación que ejecuta la optimización.
+## 7. Guía de instalación y uso
 
-```python
-class OptimizeAcceleration:
-    def execute(
-        self,
-        stages: list[Stage],
-        budget: int,
-    ) -> AccelerationResult:
-        ...
-```
-
-El método:
-
-1. Valida que el presupuesto no sea negativo.
-2. Construye el vector `reductions` de tamaño `budget + 1`.
-3. Procesa cada etapa y cada presupuesto disponible.
-4. Registra las decisiones en `choices` y `dp_trace`.
-5. Reconstruye las etapas seleccionadas desde el estado final.
-6. Calcula y devuelve `AccelerationResult`.
-
-### 3.4 `AcceleratedStage`
-
-Objeto inmutable que documenta el detalle de una etapa seleccionada.
-
-```python
-@dataclass(frozen=True)
-class AcceleratedStage:
-    name: str
-    cost: int
-    reduction: int
-```
-
-Se utiliza en `accelerated_stage_details` para reportar el costo y la reducción de cada decisión final.
-
-### 3.5 `AccelerationResult`
-
-Objeto inmutable que consolida la solución.
-
-```python
-@dataclass(frozen=True)
-class AccelerationResult:
-    base_duration: int
-    total_duration: int
-    total_cost: int
-    total_reduction: int
-    accelerated_stages: tuple[str, ...]
-    accelerated_stage_details: tuple[AcceleratedStage, ...]
-    dp_trace: tuple[DpTraceEntry, ...]
-```
-
-| Atributo | Significado |
-|---|---|
-| `base_duration` | $\sum_i t_i$, duración sin aceleración. |
-| `total_duration` | Duración después de acelerar las etapas seleccionadas. |
-| `total_cost` | Costo total utilizado. |
-| `total_reduction` | Reducción total obtenida. |
-| `accelerated_stages` | Identificadores de las etapas seleccionadas. |
-| `accelerated_stage_details` | Costo y reducción individual de cada etapa seleccionada. |
-| `dp_trace` | Estados calculados de la tabla DP. |
-
-La relación de consistencia principal es:
-
-$$
-\texttt{total\_duration}
-= \texttt{base\_duration} - \texttt{total\_reduction}.
-$$
-
-### 3.6 `DpTraceEntry`
-
-Objeto inmutable de auditoría de la programación dinámica.
-
-```python
-@dataclass(frozen=True)
-class DpTraceEntry:
-    stage: str
-    stage_index: int
-    budget: int
-    reduction: int
-    decision: str
-```
-
-| Atributo | Significado |
-|---|---|
-| `stage` | Nombre de la etapa procesada. |
-| `stage_index` | Índice de la etapa en la lista, comenzando en cero. |
-| `budget` | Presupuesto disponible en el estado. |
-| `reduction` | Mejor reducción calculada para ese estado. |
-| `decision` | `take` si tomar la etapa mejora el estado; `skip` en caso contrario. |
-
-### 3.7 Puerto `ScenarioReader`
-
-La aplicación define el contrato de lectura sin acoplarse a JSON:
-
-```python
-class ScenarioReader(Protocol):
-    def read(self, source: Path) -> AccelerationScenario:
-        ...
-```
-
-`JsonScenarioReader` es el adaptador concreto que satisface este contrato.
-
----
-
-## 4. Especificación de formatos de entrada y salida
-
-### 4.1 Formato oficial de la profesora
-
-La entrada oficial contiene información adicional para auditoría. Para esta Parte 1, `JsonScenarioReader` utiliza únicamente:
-
-- `parametros.presupuesto_aceleracion_B`.
-- `etapas[].id`.
+La instalación, configuración, ejecución de la CLI, generación de evidencia y consulta de logs están documentadas en el [README.md](../README.md), que funciona como manual de usuario del proyecto.
 - `etapas[].duracion_normal`.
 - `etapas[].costo_aceleracion`.
 - `etapas[].reduccion_tiempo_si_acelera`.
