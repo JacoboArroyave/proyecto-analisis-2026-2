@@ -4,15 +4,15 @@ import json
 import logging
 from pathlib import Path
 
-from ruta_optima.domain.models import AccelerationScenario, Stage
-
-logger = logging.getLogger("ruta_optima.infrastructure.json_scenario")
+from ruta_optima.domain.acceleration_scenario import AccelerationScenario
+from ruta_optima.domain.stage import Stage
 
 
 class JsonScenarioReader:
     """Adaptador que traduce JSON externo al modelo del dominio."""
 
     def read(self, source: Path) -> AccelerationScenario:
+        logger = logging.getLogger("ruta_optima.infrastructure.json_scenario")
         logger.info("Leyendo escenario JSON: %s", source)
         with source.open(encoding="utf-8") as file:
             payload = json.load(file)

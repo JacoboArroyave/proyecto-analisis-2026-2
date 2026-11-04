@@ -1,27 +1,30 @@
 """Caso de uso de aceleracion optima bajo presupuesto."""
 
-import logging
-
-from ruta_optima.domain.models import AcceleratedStage, AccelerationResult, DpTraceEntry, Stage
-
-logger = logging.getLogger("ruta_optima.application.optimize_acceleration")
+from ruta_optima.application.ports import LoggerPort
+from ruta_optima.domain.accelerated_stage import AcceleratedStage
+from ruta_optima.domain.acceleration_result import AccelerationResult
+from ruta_optima.domain.dp_trace_entry import DpTraceEntry
+from ruta_optima.domain.stage import Stage
 
 
 class OptimizeAcceleration:
     """Orquesta la solucion exacta de mochila 0/1 para una cadena."""
 
+    def __init__(self, logger: LoggerPort) -> None:
+        self._logger = logger
+
     def execute(self, stages: list[Stage], budget: int) -> AccelerationResult:
         if budget < 0:
             raise ValueError("budget must be non-negative")
 
-        logger.info("Iniciando optimizacion DP: %d etapas, presupuesto %d", len(stages), budget)
+        self._logger.info("Iniciando optimizacion DP: %d etapas, presupuesto %d", len(stages), budget)
 
         reductions = [0] * (budget + 1)
         choices = [[False] * (budget + 1) for _ in stages]
         trace: list[DpTraceEntry] = []
 
         for stage_index, stage in enumerate(stages):
-            logger.debug(
+            self._logger.debug(
                 "Procesando etapa %s (%d/%d): costo=%d, reduccion=%d",
                 stage.name,
                 stage_index + 1,
@@ -40,7 +43,7 @@ class OptimizeAcceleration:
                         decision = "take"
                         choices[stage_index][available_budget] = True
                 reductions[available_budget] = best
-                logger.debug(
+                self._logger.debug(
                     "DP[%d][%d] = %d (%s)",
                     stage_index + 1,
                     available_budget,
@@ -74,7 +77,7 @@ class OptimizeAcceleration:
             for stage in stages
             if stage.name in selected
         )
-        logger.info(
+        self._logger.info(
             "Optimizacion finalizada: reduccion=%d, duracion=%d, costo=%d, etapas=%s",
             total_reduction,
             base_duration - total_reduction,
