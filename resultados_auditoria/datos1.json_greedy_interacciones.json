@@ -1,0 +1,10 @@
+{
+    "instancia": "datos1.json",
+    "algoritmo": "greedy",
+    "interacciones": [
+        "E01",
+        "E16",
+        "E06",
+        "E03"
+    ]
+}
