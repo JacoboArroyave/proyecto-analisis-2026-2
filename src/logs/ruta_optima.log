@@ -1,0 +1,7 @@
+2026-11-04 18:30:58 | INFO     | ruta_optima | Logging configurado; archivo activo: logs\ruta_optima.log
+2026-11-04 18:31:19 | INFO     | ruta_optima | Logging configurado; archivo activo: logs\ruta_optima.log
+2026-11-04 18:31:24 | INFO     | ruta_optima.infrastructure.json_scenario | Leyendo escenario JSON: data\entrada_G3_mochila_20_nodos.json
+2026-11-04 18:33:23 | INFO     | ruta_optima | Logging configurado; archivo activo: C:\Users\The Real\Desktop\S7\ADA\Proyecto\Entrega1\proyecto-analisis-2026-2\src\logs\ruta_optima.log
+2026-11-04 18:33:24 | INFO     | ruta_optima.infrastructure.json_scenario | Leyendo escenario JSON: C:\Users\The Real\Desktop\S7\ADA\Proyecto\Entrega1\proyecto-analisis-2026-2\src\data\entrada_G3_mochila_20_nodos.json
+2026-11-04 18:33:58 | INFO     | ruta_optima | Logging configurado; archivo activo: C:\Users\The Real\Desktop\S7\ADA\Proyecto\Entrega1\proyecto-analisis-2026-2\src\logs\ruta_optima.log
+2026-11-04 18:33:59 | INFO     | ruta_optima.infrastructure.json_scenario | Leyendo escenario JSON: C:\Users\The Real\Desktop\S7\ADA\Proyecto\Entrega1\proyecto-analisis-2026-2\src\data\entrada_G3_mochila_20_nodos.json

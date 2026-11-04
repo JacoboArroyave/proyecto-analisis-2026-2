@@ -1,0 +1,12 @@
+instancia,algoritmo,tiempo_segundos,valor_obtenido
+datos1.json,fuerza_bruta,0.09763908386230469,4
+datos1.json,greedy,0.0007224082946777344,4
+datos1.json,greedy,0.0008699893951416016,4
+datos1.json,fuerza_bruta,0.08474946022033691,4
+datos1.json,fuerza_bruta,0.10694408416748047,4
+datos1.json,greedy,0.0008935928344726562,4
+datos1.json,fuerza_bruta,0.08264875411987305,4
+datos1.json,greedy,0.0008597373962402344,4
+datos1.json,greedy,0.000576019287109375,4
+datos1.json,fuerza_bruta,0.08130955696105957,4
+datos1.json,greedy,0.0007894039154052734,4

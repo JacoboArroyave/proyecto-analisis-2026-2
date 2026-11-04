@@ -9,3 +9,11 @@ build/
 htmlcov/
 logs/*.log
 logs/*.log.*
+env/
+venv/
+ENV/
+.env
+.json
+__pycache__/
+*.py[cod]
+*$py.class

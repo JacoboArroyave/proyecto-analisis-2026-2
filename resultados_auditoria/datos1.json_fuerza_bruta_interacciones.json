@@ -1,0 +1,10 @@
+{
+    "instancia": "datos1.json",
+    "algoritmo": "fuerza_bruta",
+    "interacciones": [
+        "E01",
+        "E03",
+        "E05",
+        "E10"
+    ]
+}
