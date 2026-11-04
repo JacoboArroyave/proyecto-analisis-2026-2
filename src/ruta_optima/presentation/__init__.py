@@ -1,0 +1,1 @@
+"""Interfaces de entrada del programa."""

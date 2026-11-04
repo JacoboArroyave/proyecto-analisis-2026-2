@@ -1,0 +1,5 @@
+"""Adaptadores de entrada y salida."""
+
+from .logging_config import configure_logging
+
+__all__ = ["configure_logging"]
