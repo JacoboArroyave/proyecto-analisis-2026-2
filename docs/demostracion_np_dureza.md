@@ -95,26 +95,11 @@ $$
 
 Ignorando factores constantes y la codificación de los identificadores de las etapas, el tamaño es
 
-$$
-N = O\left(
- n\log(M_t)
- + n\log(M_c)
- + n\log(M_d)
- + \log B
- + \log T_{meta}
-\right).
-$$
+$$N = O\left(n\log(M_t) + n\log(M_c) + n\log(M_d) + \log B + \log T_{meta}\right).$$
 
 Si se omite explícitamente el tamaño de $T_{meta}$ por estar determinado por el resto de la instancia o por considerarse parte del parámetro de consulta, puede expresarse como
 
-$$
-N = O\left(
- n\log(\max t_i)
- + n\log(\max c_i)
- + n\log(\max d_i)
- + \log B
-\right).
-$$
+$$N = O\left(n\log(\max_i t_i) + n\log(\max_i c_i) + n\log(\max_i d_i) + \log B\right).$$
 
 La distinción entre el valor numérico $B$ y su representación binaria será fundamental para analizar la naturaleza pseudo-polinomial del algoritmo exacto.
 
