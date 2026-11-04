@@ -1,9 +1,15 @@
 # Ruta optima - Grupo 3
 
-Implementacion de la **Parte 1: aceleracion optima de una cadena bajo presupuesto**.
-Este repositorio no incluye cobertura de auditoria, porque esa parte corresponde al otro integrante del equipo.
+Implementación del Subproyecto 3: **Ruta crítica con aceleración bajo presupuesto y cobertura mínima de auditoría**.
 
-## Modelo
+El proyecto completo contempla dos capacidades:
+
+- **Aceleración óptima de la cadena bajo presupuesto:** selecciona las etapas que deben acelerarse para maximizar la reducción de tiempo sin superar el presupuesto.
+- **Cobertura mínima de auditoría:** selecciona interacciones o etapas que cubran las categorías de riesgo requeridas.
+
+Este repositorio ejecuta actualmente la primera capacidad, denominada **Aceleración óptima de la cadena bajo presupuesto**. La cobertura de auditoría se desarrolla en el módulo correspondiente del otro integrante y no se ejecuta mediante este CLI.
+
+## Modelo de aceleración de la ruta crítica
 
 Cada etapa `i` tiene:
 
@@ -12,7 +18,7 @@ Cada etapa `i` tiene:
 - `reduction` (`d_i`): reduccion de tiempo obtenida.
 
 Dado un presupuesto `B`, se elige un subconjunto de etapas para maximizar `sum(d_i)` sujeto a `sum(c_i) <= B`.
-La duracion final es `sum(t_i) - sum(d_i)`. Es exactamente una mochila 0/1.
+La duración final es `sum(t_i) - sum(d_i)`. Este problema se resuelve exactamente como una mochila 0/1.
 
 ## Arquitectura
 
@@ -57,7 +63,7 @@ Desde la raiz del proyecto:
 python src/main.py
 ```
 
-La aplicacion lee automaticamente `data/entrada_G3_mochila_20_nodos.json` y muestra un resumen conciso con resultados, tiempo de ejecucion y cantidad de estados de la traza.
+La aplicación ejecuta la **Aceleración óptima de la cadena bajo presupuesto**, lee automáticamente `data/entrada_G3_mochila_20_nodos.json` y muestra un resumen conciso con resultados, tiempo de ejecución y cantidad de estados de la traza. Los datos de auditoría presentes en el JSON no son procesados por este comando.
 
 Para imprimir tambien la traza completa:
 
@@ -83,10 +89,10 @@ La formalización, reducción de NP-dureza, recurrencia y análisis de complejid
 
 ## Entrada oficial de G3
 
-La entrada oficial `data/entrada_G3_mochila_20_nodos.json` contiene tambien datos de auditoria para la Parte 2. En este proyecto solo se leen `parametros.presupuesto_aceleracion_B` y los cuatro campos de aceleracion de cada objeto en `etapas`; los datos de riesgos y auditoria se ignoran porque corresponden al compañero encargado de esa parte.
+La entrada oficial `data/entrada_G3_mochila_20_nodos.json` contiene datos para las dos capacidades del Subproyecto 3. Este CLI extrae únicamente `parametros.presupuesto_aceleracion_B` y los cuatro campos de aceleración de cada objeto en `etapas` para ejecutar la **Aceleración óptima de la cadena bajo presupuesto**. Los datos de riesgos y auditoría quedan disponibles para el módulo del otro integrante.
 
 ```bash
-python src/main.py data/entrada_G3_mochila_20_nodos.json > resultados/entrada_G3_parte1.json
+python src/main.py data/entrada_G3_mochila_20_nodos.json > resultados/entrada_G3_aceleracion.json
 ```
 
 La logica no necesita editarse para otros casos con el mismo formato y la salida se puede conservar como evidencia.
