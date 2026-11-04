@@ -7,11 +7,7 @@ name = "ruta-optima-grupo3"
 version = "0.1.0"
 description = "Parte 1: aceleracion optima de una cadena bajo presupuesto"
 requires-python = ">=3.10"
-dependencies = []
+dependencies = ["colorama>=0.4.6"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
-
-[tool.pytest.ini_options]
-pythonpath = ["src"]
-testpaths = ["tests"]

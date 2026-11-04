@@ -18,13 +18,14 @@ La duracion final es `sum(t_i) - sum(d_i)`. Es exactamente una mochila 0/1.
 
 ```text
 src/ruta_optima/
+  constants/      constantes globales de configuracion
   domain/          modelos y validaciones del dominio
   application/     caso de uso de programacion dinamica
   infrastructure/  adaptador de lectura JSON
   presentation/    interfaz de linea de comandos
 ```
 
-Las dependencias apuntan hacia adentro: la DP no conoce JSON ni la CLI, y los modelos no dependen de infraestructura. El puerto `ScenarioReader` define la lectura requerida por la aplicacion; `JsonScenarioReader` es su adaptador concreto.
+Las dependencias apuntan hacia adentro: la DP no conoce JSON ni la CLI, y los modelos no dependen de infraestructura. Las constantes globales viven en `constants/base.py`. El puerto `ScenarioReader` define la lectura requerida por la aplicacion; `JsonScenarioReader` es su adaptador concreto.
 
 ## Ejecucion
 
@@ -33,14 +34,19 @@ python -m venv .venv
 source .venv/bin/activate
 python -m pip install -e .
 python -m ruta_optima.presentation.cli
-python -m unittest discover -s tests -v
 ```
 
-Sin argumentos, la aplicacion lee automaticamente `data/entrada_G3_mochila_20_nodos.json`. Tambien acepta otra ruta JSON como argumento. La salida contiene la duracion base y final, costo utilizado, etapas elegidas y la traza de cada celda de la tabla DP.
+Sin argumentos, la aplicacion lee automaticamente el unico escenario oficial: `data/entrada_G3_mochila_20_nodos.json`. La consola muestra un resumen conciso con resultados, tiempo de ejecución y cantidad de estados de la traza. La traza completa permanece en los logs.
+
+Para imprimir tambien los 1460 estados de la traza:
+
+```bash
+python -m ruta_optima.presentation.cli --full-output
+```
 
 ## Logging
 
-Cada ejecucion escribe en `logs/ruta_optima.log`. El archivo usa formato timestamp, nivel, modulo y mensaje; conserva hasta tres archivos rotativos de 1 MB. La terminal muestra eventos `INFO` y el archivo conserva tambien los estados `DEBUG` de la tabla DP.
+Cada ejecución escribe un archivo histórico en `logs/DD_MM_YYYY/HHhrs/ruta_optima.log` y sobrescribe `logs/last_ruta_optima.log` con la ejecución más reciente. La consola muestra eventos `INFO` con color cuando `colorama` está instalada; el archivo conserva también los estados `DEBUG` de la tabla DP.
 
 Para usar otro directorio:
 

@@ -2,14 +2,14 @@
 
 import argparse
 import json
+from time import perf_counter
 from dataclasses import asdict
 from pathlib import Path
 
 from ruta_optima.application.optimize_acceleration import OptimizeAcceleration
+from ruta_optima.constants.base import DEFAULT_LOG_DIRECTORY, DEFAULT_SCENARIO_PATH, DEFAULT_LOG_LEVEL
 from ruta_optima.infrastructure.logging_config import configure_logging
 from ruta_optima.infrastructure.json_scenario import JsonScenarioReader
-
-DEFAULT_SCENARIO = Path("data/entrada_G3_mochila_20_nodos.json")
 
 
 def main() -> None:
@@ -18,20 +18,35 @@ def main() -> None:
         "scenario",
         type=Path,
         nargs="?",
-        default=DEFAULT_SCENARIO,
+        default=DEFAULT_SCENARIO_PATH,
         help="Ruta al escenario JSON (por defecto: entrada oficial G3)",
     )
     parser.add_argument(
         "--log-dir",
         type=Path,
-        default=Path("logs"),
+        default=DEFAULT_LOG_DIRECTORY,
         help="Directorio de logs (por defecto: logs)",
     )
+    parser.add_argument(
+        "--full-output",
+        action="store_true",
+        help="Imprime tambien la traza completa de la programacion dinamica",
+    )
     args = parser.parse_args()
-    configure_logging(args.log_dir)
+    logger = configure_logging(args.log_dir, DEFAULT_LOG_LEVEL)
     scenario = JsonScenarioReader().read(args.scenario)
-    result = OptimizeAcceleration().execute(list(scenario.stages), scenario.budget)
-    print(json.dumps(asdict(result), indent=2, ensure_ascii=True))
+    start_time = perf_counter()
+    result = OptimizeAcceleration(logger).execute(list(scenario.stages), scenario.budget)
+    elapsed_ms = (perf_counter() - start_time) * 1000
+    output = asdict(result)
+    if not args.full_output:
+        output.pop("dp_trace")
+        output["execution_time_ms"] = round(elapsed_ms, 3)
+        output["trace_entries"] = len(result.dp_trace)
+        output["trace_location"] = str(args.log_dir)
+    else:
+        output["execution_time_ms"] = round(elapsed_ms, 3)
+    print(json.dumps(output, indent=2, ensure_ascii=True))
 
 
 if __name__ == "__main__":

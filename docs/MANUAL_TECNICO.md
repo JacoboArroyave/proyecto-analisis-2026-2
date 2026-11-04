@@ -77,48 +77,44 @@ flowchart LR
 ```text
 Proyecto/
 ├── data/
-│   ├── entrada_G3_mochila_20_nodos.json
-│   └── example_scenario.json
+│   └── entrada_G3_mochila_20_nodos.json
 ├── docs/
 │   ├── MANUAL_TECNICO.md
 │   ├── demostracion_np_dureza.md
 │   └── manual_tecnico_grupo3.md
-├── logs/
-│   └── .gitkeep
-├── resultados/
 ├── src/
 │   └── ruta_optima/
 │       ├── __init__.py
+│       ├── constants/
+│       │   └── base.py
 │       ├── application/
-│       │   ├── __init__.py
 │       │   ├── optimize_acceleration.py
 │       │   └── ports.py
 │       ├── domain/
-│       │   ├── __init__.py
-│       │   └── models.py
+│       │   ├── accelerated_stage.py
+│       │   ├── acceleration_result.py
+│       │   ├── acceleration_scenario.py
+│       │   ├── dp_trace_entry.py
+│       │   └── stage.py
 │       ├── infrastructure/
-│       │   ├── __init__.py
 │       │   ├── json_scenario.py
 │       │   └── logging_config.py
 │       └── presentation/
-│           ├── __init__.py
 │           └── cli.py
-├── tests/
-│   └── test_algorithms.py
 ├── .gitignore
 ├── pyproject.toml
 └── README.md
 ```
 
-### `src/ruta_optima/domain/models.py`
+### `src/ruta_optima/domain/`
 
 Define las entidades inmutables mediante `@dataclass(frozen=True)`:
 
-- `Stage`: etapa individual y sus invariantes.
-- `AccelerationScenario`: conjunto de etapas y presupuesto.
-- `AcceleratedStage`: detalle de una etapa seleccionada.
-- `AccelerationResult`: resultado consolidado de la optimización.
-- `DpTraceEntry`: evidencia de cada estado calculado de la DP.
+- `stage.py`: `Stage`, etapa individual y sus invariantes.
+- `acceleration_scenario.py`: `AccelerationScenario`, conjunto de etapas y presupuesto.
+- `accelerated_stage.py`: `AcceleratedStage`, detalle de una etapa seleccionada.
+- `acceleration_result.py`: `AccelerationResult`, resultado consolidado de la optimización.
+- `dp_trace_entry.py`: `DpTraceEntry`, evidencia de cada estado calculado de la DP.
 
 ### `src/ruta_optima/application/optimize_acceleration.py`
 
@@ -126,15 +122,19 @@ Contiene el caso de uso `OptimizeAcceleration`. Implementa la solución exacta d
 
 ### `src/ruta_optima/application/ports.py`
 
-Define el puerto `ScenarioReader` mediante `Protocol`. La aplicación depende de este contrato conceptual y no del formato concreto de almacenamiento.
+Define los puertos `ScenarioReader` y `LoggerPort` mediante `Protocol`. La aplicación depende de estos contratos y no del formato concreto de almacenamiento ni de la implementación concreta del logging.
+
+### `src/ruta_optima/constants/base.py`
+
+Contiene las constantes globales de la aplicación: escenario oficial por defecto, directorio y nivel de logging, nombre del logger, formato de fecha y mensaje, y parámetros de rotación.
 
 ### `src/ruta_optima/infrastructure/json_scenario.py`
 
-Implementa `JsonScenarioReader`, que traduce los dos formatos JSON admitidos a `AccelerationScenario`.
+Implementa `JsonScenarioReader`, que traduce la entrada oficial de la profesora `entrada_G3_mochila_20_nodos.json` a `AccelerationScenario`.
 
 ### `src/ruta_optima/infrastructure/logging_config.py`
 
-Configura un logger rotativo con archivo de hasta 1 MB, tres respaldos, formato uniforme y salida de eventos `INFO` en consola.
+Configura `SafeLogger`, que escribe un archivo histórico en `logs/DD_MM_YYYY/HHhrs/`, actualiza `logs/last_ruta_optima.log` y muestra eventos `INFO` coloreados en consola cuando `colorama` está disponible. Si la dependencia no está instalada, utiliza salida sin colores.
 
 ### `src/ruta_optima/presentation/cli.py`
 
@@ -292,33 +292,7 @@ class ScenarioReader(Protocol):
 
 ## 4. Especificación de formatos de entrada y salida
 
-### 4.1 Formato JSON genérico
-
-El adaptador admite un formato compacto para pruebas y escenarios sintéticos:
-
-```json
-{
-  "budget": 6,
-  "stages": [
-    {
-      "name": "recepcion",
-      "duration": 10,
-      "cost": 3,
-      "reduction": 4
-    },
-    {
-      "name": "validacion",
-      "duration": 8,
-      "cost": 4,
-      "reduction": 5
-    }
-  ]
-}
-```
-
-El campo `stages` se convierte directamente con `Stage(**stage)` y `budget` se convierte en el presupuesto del escenario.
-
-### 4.2 Formato oficial de la profesora
+### 4.1 Formato oficial de la profesora
 
 La entrada oficial contiene información adicional para auditoría. Para esta Parte 1, `JsonScenarioReader` utiliza únicamente:
 
@@ -374,7 +348,7 @@ Stage(
 
 y un escenario con `budget=72`.
 
-### 4.3 Salida JSON
+### 4.2 Salida JSON
 
 La CLI ejecuta:
 
@@ -426,7 +400,7 @@ $$
 
 objetos `DpTraceEntry`.
 
-### 4.4 Significado de la traza
+### 4.3 Significado de la traza
 
 Cada elemento de `dp_trace` representa una celda procesada. La pareja `(stage_index, budget)` identifica el estado. `reduction` es el valor óptimo calculado hasta esa etapa y presupuesto. `decision` indica si la alternativa de tomar la etapa produjo una mejora estricta (`take`) o si se conservó la solución anterior (`skip`).
 
@@ -730,6 +704,12 @@ Etapas aceleradas: E02, E03, E04, E06, E08, E12
 Estados DP:         1460
 ```
 
+La ejecución normal de la CLI muestra únicamente este resumen y el tiempo de ejecución. La traza completa se conserva en los archivos de logging. Para imprimirla explícitamente en la consola se puede usar:
+
+```bash
+python -m ruta_optima.presentation.cli --full-output
+```
+
 La selección usa todo el presupuesto y respeta las restricciones del escenario.
 
 ### 7.4 Configurar logs
@@ -737,7 +717,8 @@ La selección usa todo el presupuesto y respeta las restricciones del escenario.
 Por defecto, el logger escribe en:
 
 ```text
-logs/ruta_optima.log
+logs/DD_MM_YYYY/HHhrs/ruta_optima.log
+logs/last_ruta_optima.log
 ```
 
 Para utilizar otra carpeta:
@@ -753,24 +734,7 @@ El archivo utiliza el formato:
 YYYY-MM-DD HH:MM:SS | LEVEL | MODULE | MESSAGE
 ```
 
-Se registran eventos `INFO` en consola y archivo, y estados detallados de la DP en nivel `DEBUG` dentro del archivo. El archivo rota al alcanzar 1 MB y conserva hasta tres copias anteriores.
-
-### 7.5 Ejecutar pruebas
-
-El comando oficial incluido en el proyecto es:
-
-```bash
-python -m unittest discover -s tests -v
-```
-
-También puede utilizarse `pytest` si se instala como herramienta de desarrollo:
-
-```bash
-python -m pip install pytest
-python -m pytest -q
-```
-
-Las pruebas cubren la solución óptima en una instancia pequeña y la carga de la entrada oficial G3.
+Se registran eventos `INFO` en consola y archivo, y estados detallados de la DP en nivel `DEBUG` dentro del archivo. La consola usa colores cuando `colorama` está disponible; los archivos permanecen sin códigos de color. La salida de logs usa `stderr` para mantener limpio el JSON que la CLI imprime por `stdout`.
 
 ---
 
@@ -809,8 +773,8 @@ application/
 └── select_audits.py
 
 domain/
-├── models.py
-└── audit_models.py
+├── audit_candidate.py
+└── risk_category.py
 ```
 
 El nuevo módulo podría incluir:
@@ -845,8 +809,7 @@ Para reproducir la evidencia de la Parte 1:
 2. Ejecutar `python -m ruta_optima.presentation.cli` desde la raíz.
 3. Conservar la salida JSON en `resultados/entrada_G3_parte1.json`.
 4. Conservar `logs/ruta_optima.log` como evidencia de lectura, estados y resultado.
-5. Ejecutar `python -m unittest discover -s tests -v`.
-6. Reportar por caso: duración base, duración final, costo, reducción, etapas aceleradas, tiempo de ejecución y cantidad de estados de la traza.
+5. Reportar por caso: duración base, duración final, costo, reducción, etapas aceleradas, tiempo de ejecución y cantidad de estados de la traza.
 
 La implementación actual reproduce para la entrada oficial:
 

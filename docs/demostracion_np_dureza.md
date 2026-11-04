@@ -508,7 +508,7 @@ El dominio contiene las reglas esenciales del problema y no depende de JSON, arc
 
 ### 5.3 Puerto y adaptador de infraestructura
 
-`ScenarioReader` define el contrato requerido por la aplicación para obtener un `AccelerationScenario`. `JsonScenarioReader` implementa este contrato y traduce tanto el formato simple de ejemplo como la entrada oficial `entrada_G3_mochila_20_nodos.json`.
+`ScenarioReader` define el contrato requerido por la aplicación para obtener un `AccelerationScenario`. `JsonScenarioReader` implementa este contrato y traduce la entrada oficial `entrada_G3_mochila_20_nodos.json`.
 
 Los campos de auditoría presentes en la entrada oficial se ignoran en esta Parte 1; el adaptador extrae únicamente el presupuesto de aceleración y los atributos de aceleración de las etapas.
 
