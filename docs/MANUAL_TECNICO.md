@@ -239,7 +239,7 @@ class AccelerationResult:
 
 | Atributo | Significado |
 |---|---|
-| `base_duration` | $ sum_i t_i$, duración sin aceleración. |
+| `base_duration` | $\sum_i t_i$, duración sin aceleración. |
 | `total_duration` | Duración después de acelerar las etapas seleccionadas. |
 | `total_cost` | Costo total utilizado. |
 | `total_reduction` | Reducción total obtenida. |
