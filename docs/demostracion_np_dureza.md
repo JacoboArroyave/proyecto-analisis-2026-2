@@ -349,13 +349,9 @@ Para la etapa $i$, existen dos decisiones:
 
 La recurrencia es:
 
-$$
-DP[i][b] =
-\begin{cases}
-\max\left(DP[i-1][b],\ DP[i-1][b-c_i] + d_i\right), & c_i \leq b,\\[4pt]
-DP[i-1][b], & c_i > b.
-\end{cases}
-$$
+$$DP[i][b] = \max\left(DP[i-1][b],\ DP[i-1][b-c_i] + d_i\right) \quad \text{si } c_i \leq b.$$ 
+
+$$DP[i][b] = DP[i-1][b] \quad \text{si } c_i > b.$$ 
 
 Las condiciones iniciales son:
 
