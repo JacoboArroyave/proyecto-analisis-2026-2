@@ -720,3 +720,243 @@ $$
 $$
 
 Estos valores deben mantenerse sincronizados entre el código, el informe técnico, el manual y la evidencia generada.
+
+
+---
+
+# PARTE II: Cobertura mínima de auditoría
+
+**Alcance de esta sección:** segunda parte de la solución base (Sección 4.3 del proyecto): seleccionar el subconjunto mínimo de interacciones a auditar para cubrir todas las categorías de riesgo normativo. El entorno base (Python `>= 3.10`, sistemas operativos compatibles, instalación del entorno virtual `.venv` y archivo de entrada oficial `data/entrada_G3_mochila_20_nodos.json`) es exactamente el mismo definido en el encabezado y en la Sección 7 de la Parte I, por lo que no se repite aquí. Este módulo utiliza únicamente bibliotecas de la librería estándar de Python (`csv`, `json`, `os`, `pathlib.Path` y `time.perf_counter`).
+
+---
+
+## 10. Arquitectura del módulo de auditoría
+
+### 10.1 Estructura de carpetas y archivos de la Parte II
+
+El módulo de auditoría se integra en el repositorio bajo `src/auditoria/`, conectado al punto de entrada interactivo `src/main.py` y generando sus artefactos de salida en `resultados_auditoria/`:
+
+```text
+Proyecto/
+├── data/
+│   └── entrada_G3_mochila_20_nodos.json     # Entrada compartida (leída también por Parte II)
+├── resultados_auditoria/                    # Salidas generadas automáticamente por Parte II
+│   ├── comparativa_rendimiento.csv          # Registro histórico de tiempos y tamaños de solución
+│   ├── entrada_G3_fuerza_bruta.json         # Detalle de interacciones óptimas (Fuerza Bruta)
+│   └── entrada_G3_greedy.json               # Detalle de interacciones seleccionadas (Voraz)
+└── src/
+    ├── main.py                              # Menú interactivo unificado (opciones 1, 2 y 3)
+    └── auditoria/
+        ├── brute_force.py                   # Algoritmo exacto por exploración exhaustiva
+        ├── greedy.py                        # Algoritmo aproximado voraz (Set Cover)
+        └── utils.py                         # Carga JSON, validación de factibilidad y persistencia
+```
+
+### 10.2 Responsabilidad de cada módulo
+
+| Archivo | Función / Componente | Responsabilidad |
+|---|---|---|
+| `src/main.py` | `mostrar_menu()`, `main()` | Presenta el menú interactivo en consola y despacha la ejecución hacia la Parte I (opción 1), Fuerza Bruta de auditoría (opción 2) o Voraz de auditoría (opción 3), propagando la ruta del escenario `args.scenario`. |
+| `src/auditoria/utils.py` | `cargar_json(ruta_archivo)` | Lee el archivo JSON de entrada y extrae el universo de riesgos $\mathcal{U}$ (`set[str]`) a partir de `categorias_riesgo[].id` y el diccionario de interacciones candidatas $\mathcal{I}$ (`dict[str, set[str]]`) a partir de `etapas[].id` y `etapas[].riesgos_cubiertos_auditoria_completa`. |
+| `src/auditoria/utils.py` | `factibilidad(universo, interacciones)` | Calcula la unión total $\bigcup_{i=1}^{n} S_i$ en $O(n \cdot r)$ y comprueba mediante `issubset` si cubre todo $\mathcal{U}$ antes de ejecutar cualquier algoritmo de búsqueda. |
+| `src/auditoria/utils.py` | `obtener_nombre_corto_dataset(ruta)` | Extrae el identificador corto del conjunto de datos (por ejemplo, `entrada_G3` a partir de `entrada_G3_mochila_20_nodos.json`) para nombrar de forma uniforme las salidas. |
+| `src/auditoria/utils.py` | `registrar_resultado_auditoria(...)` | Centraliza la persistencia de resultados invocando `guardar_metrica_csv` y `guardar_interacciones_detalle` en la carpeta `resultados_auditoria/`. |
+| `src/auditoria/brute_force.py` | `fuerza_bruta(...)`, `combinaciones(...)` | Resuelve de forma exacta el problema generando recursivamente las combinaciones de tamaño creciente $k = 1, \ldots, n$ hasta hallar el primer subconjunto que cubra $\mathcal{U}$. |
+| `src/auditoria/greedy.py` | `greedy(...)` | Aproxima la cobertura mínima seleccionando iterativamente la interacción no elegida que maximiza el número de categorías nuevas cubiertas $|S_i \setminus K|$. |
+
+### 10.3 Diagrama de componentes e integración
+
+```mermaid
+flowchart LR
+    CLI["src/main.py\nMenú Principal (Opciones 2 y 3)"] --> UtilsLoad["auditoria/utils.py\ncargar_json()"]
+    UtilsLoad --> FB["auditoria/brute_force.py\nfuerza_bruta()"]
+    UtilsLoad --> GR["auditoria/greedy.py\ngreedy()"]
+    FB --> Fact["auditoria/utils.py\nfactibilidad()"]
+    GR --> Fact
+    FB --> Reg["auditoria/utils.py\nregistrar_resultado_auditoria()"]
+    GR --> Reg
+    Reg --> CSV["resultados_auditoria/\ncomparativa_rendimiento.csv"]
+    Reg --> JSONOut["resultados_auditoria/\n<dataset>_<metodo>.json"]
+```
+
+---
+
+## 11. Funcionamiento, algoritmos, estructuras de datos y condiciones de parada
+
+### 11.1 Estructuras de datos principales
+
+1. **`universo` (`set[str]`):** Conjunto hash que almacena las $r$ categorías de riesgo normativo ($\mathcal{U} = \{R_{01}, \ldots, R_r\}$). Permite verificar la condición de cobertura completa mediante `universo.issubset(cubiertas)` en tiempo $O(r)$.
+2. **`interacciones` (`dict[str, set[str]]`):** Diccionario donde cada clave es el identificador de una etapa (por ejemplo, `"E01"`) y su valor es el conjunto `set[str]` de categorías que cubre su auditoría completa ($S_i \subseteq \mathcal{U}$).
+3. **`cubiertas` (`set[str]`):** Conjunto acumulador de categorías ya cubiertas por la solución parcial actual ($K \subseteq \mathcal{U}$).
+4. **`seleccionadas` (`list[str]`) y `seleccionadas_set` (`set[str]`):** En el algoritmo voraz, la lista preserva el orden cronológico en que se eligieron las interacciones para el reporte de salida, mientras que el conjunto auxiliar permite consultar `if nombre in seleccionadas_set` en tiempo promedio $O(1)$ por operación hash.
+
+### 11.2 Algoritmo Exacto: Fuerza Bruta (`brute_force.py`)
+
+- **Flujo del algoritmo:**
+  1. Inicia el cronómetro de alta precisión (`perf_counter()`) y valida la instancia con `factibilidad(universo, interacciones)`.
+  2. Itera sobre el tamaño de subconjunto $k$ desde $1$ hasta $n$.
+  3. Para cada $k$, invoca `combinaciones(nombres, k)`, que mediante backtracking recursivo construye las $\binom{n}{k}$ combinaciones posibles de tamaño $k$.
+  4. Para cada combinación, une los conjuntos de riesgos de sus $k$ etapas en `cubiertas` y evalúa `universo.issubset(cubiertas)`.
+  5. Al encontrar la primera combinación que cubre $\mathcal{U}$, detiene la búsqueda, registra el tiempo y las interacciones en `resultados_auditoria/` y retorna la solución.
+- **Condiciones de parada:**
+  - *Parada prematura por infactibilidad:* Si `not factibilidad(universo, interacciones)`, termina inmediatamente retornando `None` en $O(n \cdot r)$.
+  - *Parada por optimalidad:* Tan pronto como `universo.issubset(cubiertas)` es `True` para un tamaño $k$; dado que los tamaños se exploran en orden estrictamente creciente ($k = 1, 2, \ldots, n$), la primera cobertura encontrada tiene cardinalidad mínima garantizada $\mathrm{OPT} = k$.
+  - *Agotamiento del espacio de búsqueda:* Si el ciclo externo supera $k = n$ sin hallar cobertura.
+- **Complejidad:** Tiempo $T_{\text{FB}}(n, r) = O(n \cdot r \cdot 2^n)$ en el peor caso y espacio $O\left(k \binom{n}{k}\right)$ para almacenar las combinaciones del nivel $k$ activo (deducción formal en [demostracion_np_dureza_set_cover.md](demostracion_np_dureza_set_cover.md)).
+
+### 11.3 Algoritmo Aproximado: Voraz / Greedy (`greedy.py`)
+
+- **Flujo del algoritmo:**
+  1. Inicia el cronómetro (`perf_counter()`) y verifica `factibilidad(universo, interacciones)`.
+  2. Inicializa `cubiertas = set()`, `seleccionadas = []` y `seleccionadas_set = set()`.
+  3. Mientras `not universo.issubset(cubiertas)`:
+     - Recorre todas las interacciones candidatas $(E_i, S_i)$ que no estén en `seleccionadas_set`.
+     - Calcula el conjunto de riesgos nuevos $\Delta_i = S_i \setminus K$ (`riesgos - cubiertas`) y su cardinalidad `len(nuevos)`.
+     - Conserva la interacción `mejor_interaccion` con mayor aporte estricto (`cantidad > mejor_cantidad`).
+     - Añade `mejor_interaccion` a `seleccionadas` y `seleccionadas_set`, y actualiza `cubiertas.update(mejores_nuevos)`.
+  4. Registra el tiempo y la lista de interacciones elegidas en `resultados_auditoria/` y retorna `seleccionadas`.
+- **Condiciones de parada:**
+  - *Parada por infactibilidad inicial:* Si `factibilidad(universo, interacciones)` es `False`, retorna `None`.
+  - *Parada por cobertura completa (condición normal):* El bucle `while` termina cuando `universo.issubset(cubiertas)` es `True`. Como en cada iteración se cubre al menos una categoría nueva ($|\Delta_{i^*}| \geq 1$), el bucle ejecuta a lo sumo $\min(n, r) \leq r$ iteraciones.
+  - *Parada de seguridad:* Si en alguna iteración ninguna interacción restante aporta categorías nuevas (`mejor_interaccion is None`), el algoritmo aborta retornando `None`.
+- **Complejidad y garantía:** Tiempo $T_{\text{greedy}}(n, r) = O(n \cdot r^2)$ en el peor caso, espacio $O(n + r)$, y cota de aproximación armónica $\mathrm{SOL} \leq H_r \cdot \mathrm{OPT}$ con $H_r = \sum_{j=1}^{r} 1/j \leq \ln(r) + 1$ (Johnson, 1974; Chvátal, 1979).
+
+```mermaid
+flowchart TD
+    Start([Inicio Greedy]) --> CheckFact{"¿factibilidad(U, I)?"}
+    CheckFact -- "No" --> Infeasible["Imprimir INSTANCIA NO FACTIBLE y retornar None"]
+    CheckFact -- "Sí" --> Init["cubiertas = set()\nseleccionadas = []\nseleccionadas_set = set()"]
+    Init --> WhileLoop{"¿universo.issubset(cubiertas)?"}
+    WhileLoop -- "No" --> Scan["Recorrer (nombre, riesgos) no en seleccionadas_set\ny elegir el que maximice len(riesgos - cubiertas)"]
+    Scan --> Found{"¿mejor_interaccion != None?"}
+    Found -- "No" --> Abort["Retornar None"]
+    Found -- "Sí" --> Update["Agregar mejor_interaccion a seleccionadas y seleccionadas_set\ncubiertas.update(mejores_nuevos)"]
+    Update --> WhileLoop
+    WhileLoop -- "Sí" --> Save["registrar_resultado_auditoria() en CSV y JSON"]
+    Save --> End([Retornar seleccionadas])
+```
+
+---
+
+## 12. Uso del módulo de auditoría, formato de datos y salidas
+
+### 12.1 Ejecución desde el menú interactivo
+
+Desde la raíz del proyecto (con el entorno virtual activo si aplica), ejecutar:
+
+```bash
+python src/main.py
+```
+
+*(Opcionalmente se puede indicar otro archivo JSON: `python src/main.py ruta/al/escenario.json`).*
+
+El programa despliega el menú interactivo unificado:
+
+```text
+================ ADA - MENÚ PRINCIPAL ================
+1. Optimización estándar (Lógica original de la CLI)
+2. Algoritmo de Fuerza Bruta (Auditoría)
+3. Algoritmo Greedy / Voraz (Auditoría)
+0. Salir
+==================================================================
+Seleccione una opción (1-3):
+```
+
+- Ingresar **`2`** ejecuta `fuerza_bruta(universo, interacciones, args.scenario)`.
+- Ingresar **`3`** ejecuta `greedy(universo, interacciones, args.scenario)`.
+- Ingresar **`0`** finaliza el programa.
+
+### 12.2 Campos consumidos del formato de entrada JSON
+
+Mientras que la Parte I consume `presupuesto_aceleracion_B` y los atributos temporales de `etapas`, la Parte II consume del mismo archivo `data/entrada_G3_mochila_20_nodos.json` únicamente:
+
+- `categorias_riesgo[].id`: define cada elemento del universo $\mathcal{U}$ (`"R01"` a `"R12"`).
+- `etapas[].id`: identificador de la interacción candidata (`"E01"` a `"E20"`).
+- `etapas[].riesgos_cubiertos_auditoria_completa`: lista de identificadores de riesgo cubiertos al auditar la etapa ($S_i$).
+
+### 12.3 Ejemplo de salida en consola y archivos generados
+
+#### Ejecución de la Opción 2 (Fuerza Bruta) sobre la entrada oficial G3
+
+Explora e imprime las combinaciones de tamaño $k = 1$ ($20$), $k = 2$ ($190$), $k = 3$ ($1140$) y se detiene al hallar la primera cobertura en $k = 4$:
+
+```text
+SOLUCIÓN ÓPTIMA ENCONTRADA
+Interacciones: ['E01', 'E03', 'E05', 'E10']
+Cantidad: 4
+```
+
+#### Ejecución de la Opción 3 (Greedy / Voraz) sobre la entrada oficial G3
+
+```text
+INSTANCIA FACTIBLE
+Todas las categorías tienen cobertura.
+
+Seleccionada: E01 | Nuevos riesgos: {'R01', 'R02', 'R03', 'R10'} | Total cubiertos: {...}
+Seleccionada: E16 | Nuevos riesgos: {'R04', 'R05', 'R09', 'R12'} | Total cubiertos: {...}
+Seleccionada: E06 | Nuevos riesgos: {'R07', 'R08', 'R11'} | Total cubiertos: {...}
+Seleccionada: E03 | Nuevos riesgos: {'R06'} | Total cubiertos: {...}
+
+SOLUCIÓN VORAZ ENCONTRADA
+Interacciones: ['E01', 'E16', 'E06', 'E03']
+Cantidad: 4
+```
+
+#### Archivos de salida en `resultados_auditoria/`
+
+1. **Detalle JSON por método (`resultados_auditoria/<dataset>_<metodo>.json`):**
+   Usa el nombre corto del dataset (`entrada_G3`) seguido del algoritmo (`fuerza_bruta` o `greedy`). Por ejemplo, `resultados_auditoria/entrada_G3_greedy.json`:
+   ```json
+   {
+       "instancia": "entrada_G3",
+       "algoritmo": "greedy",
+       "interacciones": [
+           "E01",
+           "E16",
+           "E06",
+           "E03"
+       ]
+   }
+   ```
+   Y `resultados_auditoria/entrada_G3_fuerza_bruta.json`:
+   ```json
+   {
+       "instancia": "entrada_G3",
+       "algoritmo": "fuerza_bruta",
+       "interacciones": [
+           "E01",
+           "E03",
+           "E05",
+           "E10"
+       ]
+   }
+   ```
+
+2. **Registro acumulador de métricas (`resultados_auditoria/comparativa_rendimiento.csv`):**
+   Agrega una fila en cada ejecución con las columnas `instancia,algoritmo,tiempo_segundos,valor_obtenido`, donde `valor_obtenido` es la cardinalidad $|C|$ de la cobertura encontrada.
+
+---
+
+## 13. Validación, limitaciones y componentes pendientes de la Parte II
+
+### 13.1 Validación sobre la instancia oficial
+
+En la entrada oficial ($n = 20$ etapas, $r = 12$ categorías de riesgo, $d = \max_i |S_i| = 4$):
+- **Fuerza Bruta:** descarta las $1350$ combinaciones de tamaños $1, 2$ y $3$ y certifica que el óptimo exacto es $\mathrm{OPT} = 4$ con la selección $\{E_{01}, E_{03}, E_{05}, E_{10}\}$.
+- **Voraz:** obtiene $\mathrm{SOL} = 4$ con la selección $\{E_{01}, E_{16}, E_{06}, E_{03}\}$, alcanzando una razón empírica $\rho = \mathrm{SOL}/\mathrm{OPT} = 1.0 \leq H_{12} \approx 3.1032$.
+
+### 13.2 Supuestos y limitaciones conocidas
+
+1. **Explosión combinatoria en Fuerza Bruta:** dado su orden $O(n \cdot r \cdot 2^n)$ y que `combinaciones(nombres, k)` materializa en memoria la lista de $\binom{n}{k}$ subconjuntos de cada nivel $k$, el algoritmo exacto solo debe ejecutarse sobre instancias pequeñas ($n \leq 22$). Para valores mayores de $n$ debe utilizarse exclusivamente el algoritmo voraz.
+2. **Impacto de impresión por consola en la medición de tiempos:** `brute_force.py` imprime cada combinación evaluada (`print(combinacion, "->", cubiertas)`). Esto facilita la trazabilidad visual durante la sustentación, pero hace que el tiempo reportado incluya sobrecarga de entrada/salida (E/S) de la terminal.
+3. **Empates deterministas:** tanto en fuerza bruta como en el voraz se conserva la primera alternativa que alcanza el mejor valor según el orden de aparición en el JSON (`cantidad > mejor_cantidad`), garantizando ejecuciones 100% reproducibles.
+4. **Cobertura no ponderada (solución base):** esta entrega base modela el problema clásico *Set Cover* cardinal (donde cada interacción auditada tiene peso unitario $1$ y se lee `riesgos_cubiertos_auditoria_completa`).
+
+### 13.3 Componentes pendientes para entregas posteriores (Variantes de la Sección 4.4)
+
+Los siguientes elementos presentes en el JSON oficial no son consumidos todavía por la solución base y corresponden a las variantes obligatorias de las siguientes fases del cronograma:
+
+- **Variante 1 (Cobertura ponderada):** incorporar el campo `categorias_riesgo[].importancia` y/o los costos diferenciados de `etapas[].variaciones_auditoria` (`parcial` y `completa`), adaptando la regla de selección voraz por costo-efectividad y la cota $H_r$.
+- **Variante 2 (Optimización conjunta bajo presupuesto compartido):** integrar la decisión de aceleración (Parte I) y la de auditoría (Parte II) bajo el parámetro `presupuesto_conjunto_aceleracion_y_auditoria`.
+- **Variante 3 (Flujo con etapas en paralelo — DAG):** consumir la lista de aristas `flujo` (`origen` $\to$ `destino`) para calcular el camino crítico mediante orden topológico y programación dinámica en $O(n + m)$ antes de decidir la aceleración.
+- **Batería de experimentación asintótica:** generador de instancias sintéticas para $\geq 5$ tamaños crecientes de $n$ y gráficas comparativas entre el tiempo empírico medido y las curvas teóricas $T(n, B)$ y $T(n, r)$.

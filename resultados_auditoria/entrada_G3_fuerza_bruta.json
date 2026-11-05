@@ -1,0 +1,10 @@
+{
+    "instancia": "entrada_G3",
+    "algoritmo": "fuerza_bruta",
+    "interacciones": [
+        "E01",
+        "E03",
+        "E05",
+        "E10"
+    ]
+}

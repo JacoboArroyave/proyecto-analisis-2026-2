@@ -1,0 +1,10 @@
+{
+    "instancia": "entrada_G3",
+    "algoritmo": "greedy",
+    "interacciones": [
+        "E01",
+        "E16",
+        "E06",
+        "E03"
+    ]
+}

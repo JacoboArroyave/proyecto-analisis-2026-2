@@ -88,14 +88,13 @@ def main() -> None:
 
         elif opcion == "2":
             print("\n--- Ejecutando Algoritmo de Fuerza Bruta ---")
-            # Usa por defecto el archivo configurado en utils apuntando a data/
-            universo, interacciones = cargar_json()
-            fuerza_bruta(universo, interacciones)
+            universo, interacciones = cargar_json(args.scenario)
+            fuerza_bruta(universo, interacciones, args.scenario)
 
         elif opcion == "3":
             print("\n--- Ejecutando Algoritmo Greedy ---")
-            universo, interacciones = cargar_json()
-            greedy(universo, interacciones)
+            universo, interacciones = cargar_json(args.scenario)
+            greedy(universo, interacciones, args.scenario)
 
         elif opcion == "0":
             print("Saliendo del programa...")

@@ -1,5 +1,5 @@
 {
-    "instancia": "datos1.json",
+    "instancia": "datos_profe.json",
     "algoritmo": "greedy",
     "interacciones": [
         "E01",
