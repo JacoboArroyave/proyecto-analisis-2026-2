@@ -2,14 +2,12 @@
 
 Implementación del Subproyecto 3: **Ruta crítica con aceleración bajo presupuesto y cobertura mínima de auditoría**.
 
-El proyecto completo contempla dos capacidades:
+El proyecto completo contempla dos capacidades integradas en el menú principal de la CLI:
 
-- **Aceleración óptima de la cadena bajo presupuesto:** selecciona las etapas que deben acelerarse para maximizar la reducción de tiempo sin superar el presupuesto.
-- **Cobertura mínima de auditoría:** selecciona interacciones o etapas que cubran las categorías de riesgo requeridas.
+- **Aceleración óptima de la cadena bajo presupuesto (Parte 1):** selecciona las etapas que deben acelerarse para maximizar la reducción de tiempo sin superar el presupuesto.
+- **Cobertura mínima de auditoría (Parte 2):** selecciona el menor subconjunto de interacciones o etapas que cubra todas las categorías de riesgo normativo requeridas (mediante fuerza bruta exacta y aproximación voraz).
 
-Este repositorio ejecuta actualmente la primera capacidad, denominada **Aceleración óptima de la cadena bajo presupuesto**. La cobertura de auditoría se desarrolla en el módulo correspondiente del otro integrante y no se ejecuta mediante este CLI.
-
-## Modelo de aceleración de la ruta crítica
+## Modelo de aceleración de la ruta crítica (Parte 1)
 
 Cada etapa `i` tiene:
 
@@ -20,6 +18,10 @@ Cada etapa `i` tiene:
 Dado un presupuesto `B`, se elige un subconjunto de etapas para maximizar `sum(d_i)` sujeto a `sum(c_i) <= B`.
 La duración final es `sum(t_i) - sum(d_i)`. Este problema se resuelve exactamente como una mochila 0/1.
 
+## Modelo de cobertura mínima de auditoría (Parte 2)
+
+Dado un universo de `r` categorías de riesgo (`categorias_riesgo`) y `n` etapas candidatas donde cada etapa cubre un subconjunto de categorías (`riesgos_cubiertos_auditoria_completa`), se busca el subconjunto de etapas de cardinalidad mínima cuya unión cubra las `r` categorías. Corresponde al problema clásico *Set Cover* y se resuelve de forma exacta (fuerza bruta) y aproximada (algoritmo voraz con cota armónica `H_r`).
+
 ## Arquitectura
 
 ```text
@@ -29,7 +31,12 @@ src/ruta_optima/
   application/     caso de uso de programacion dinamica
   infrastructure/  adaptador de lectura JSON
 
-src/main.py         punto de entrada principal de la CLI
+src/auditoria/
+  brute_force.py   algoritmo exacto de cobertura por fuerza bruta
+  greedy.py        algoritmo aproximado voraz (Set Cover)
+  utils.py         carga de datos, factibilidad y guardado en resultados_auditoria/
+
+src/main.py         punto de entrada principal con menu interactivo (Partes 1 y 2)
 ```
 
 Las dependencias apuntan hacia adentro: la DP no conoce JSON ni la CLI, y los modelos no dependen de infraestructura. Las constantes globales viven en `constants/base.py`. El puerto `ScenarioReader` define la lectura requerida por la aplicacion; `JsonScenarioReader` es su adaptador concreto.
@@ -63,9 +70,13 @@ Desde la raiz del proyecto:
 python src/main.py
 ```
 
-La aplicación ejecuta la **Aceleración óptima de la cadena bajo presupuesto**, lee automáticamente `data/entrada_G3_mochila_20_nodos.json` y muestra un resumen conciso con resultados, tiempo de ejecución y cantidad de estados de la traza. Los datos de auditoría presentes en el JSON no son procesados por este comando.
+Al ejecutar `python src/main.py`, se despliega el menú interactivo desde el cual se pueden ejecutar ambas partes sobre `data/entrada_G3_mochila_20_nodos.json`:
 
-Para imprimir tambien la traza completa:
+- **Opción 1 (Aceleración óptima de la cadena bajo presupuesto):** ejecuta la programación dinámica, muestra el resumen conciso con resultados, tiempo de ejecución y cantidad de estados de la traza.
+- **Opción 2 (Fuerza Bruta - Auditoría):** encuentra la cobertura mínima exacta y registra la salida en `resultados_auditoria/entrada_G3_fuerza_bruta.json` y en `resultados_auditoria/comparativa_rendimiento.csv`.
+- **Opción 3 (Greedy / Voraz - Auditoría):** ejecuta la aproximación voraz y registra la salida en `resultados_auditoria/entrada_G3_greedy.json` y en `resultados_auditoria/comparativa_rendimiento.csv`.
+
+Para imprimir tambien la traza completa de la Parte 1:
 
 ```bash
 python src/main.py --full-output
@@ -85,11 +96,13 @@ Los logs se guardan en `logs/DD_MM_YYYY/HHhrs/ruta_optima.log` y en `logs/last_r
 
 ## Análisis técnico
 
-La formalización, reducción de NP-dureza, recurrencia y análisis de complejidad están documentados en [demostracion_np_dureza.md](docs/demostracion_np_dureza.md). La arquitectura y el funcionamiento interno están descritos en [MANUAL_TECNICO.md](docs/MANUAL_TECNICO.md).
+La formalización, reducción de NP-dureza, recurrencia y análisis de complejidad están documentados en `formalizacion_mochila` (Parte 1) y `formalizacion_set_cover` (Parte 2). La arquitectura y el funcionamiento interno están descritos en `MANUAL_TECNICO`.
 
 ## Entrada oficial de G3
 
-La entrada oficial `data/entrada_G3_mochila_20_nodos.json` contiene datos para las dos capacidades del Subproyecto 3. Este CLI extrae únicamente `parametros.presupuesto_aceleracion_B` y los cuatro campos de aceleración de cada objeto en `etapas` para ejecutar la **Aceleración óptima de la cadena bajo presupuesto**. Los datos de riesgos y auditoría quedan disponibles para el módulo del otro integrante.
+La entrada oficial `data/entrada_G3_mochila_20_nodos.json` contiene datos para las dos capacidades del Subproyecto 3:
+- **Parte 1 (Aceleración):** consume `parametros.presupuesto_aceleracion_B` y los atributos de duración, costo y reducción de cada objeto en `etapas`.
+- **Parte 2 (Auditoría):** consume `categorias_riesgo` y `riesgos_cubiertos_auditoria_completa` de cada etapa, guardando automáticamente las métricas y selecciones en `resultados_auditoria/`.
 
 ```bash
 python src/main.py data/entrada_G3_mochila_20_nodos.json > resultados/entrada_G3_aceleracion.json

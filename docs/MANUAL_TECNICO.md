@@ -80,8 +80,8 @@ Proyecto/
 │   └── entrada_G3_mochila_20_nodos.json
 ├── docs/
 │   ├── MANUAL_TECNICO.md
-│   ├── demostracion_np_dureza.md
-│   └── manual_tecnico_grupo3.md
+│   ├── formalizacion_mochila
+│   └── formalizacion_set_cover
 ├── src/
 │   └── ruta_optima/
 │       ├── __init__.py
@@ -726,7 +726,9 @@ Estos valores deben mantenerse sincronizados entre el código, el informe técni
 
 # PARTE II: Cobertura mínima de auditoría
 
-**Alcance de esta sección:** segunda parte de la solución base (Sección 4.3 del proyecto): seleccionar el subconjunto mínimo de interacciones a auditar para cubrir todas las categorías de riesgo normativo. El entorno base (Python `>= 3.10`, sistemas operativos compatibles, instalación del entorno virtual `.venv` y archivo de entrada oficial `data/entrada_G3_mochila_20_nodos.json`) es exactamente el mismo definido en el encabezado y en la Sección 7 de la Parte I, por lo que no se repite aquí. Este módulo utiliza únicamente bibliotecas de la librería estándar de Python (`csv`, `json`, `os`, `pathlib.Path` y `time.perf_counter`).
+**Alcance de esta sección:** 
+El mismo definido en el encabezado y en la Sección 7 de la Parte I, por lo que no se repite aquí. 
+Este módulo utiliza únicamente bibliotecas de la librería estándar de Python (`csv`, `json`, `os`, `pathlib.Path` y `time.perf_counter`).
 
 ---
 
@@ -734,7 +736,7 @@ Estos valores deben mantenerse sincronizados entre el código, el informe técni
 
 ### 10.1 Estructura de carpetas y archivos de la Parte II
 
-El módulo de auditoría se integra en el repositorio bajo `src/auditoria/`, conectado al punto de entrada interactivo `src/main.py` y generando sus artefactos de salida en `resultados_auditoria/`:
+El módulo de auditoría se integra en `src/auditoria/`, conectado al punto de entrada interactivo `src/main.py` y generando sus artefactos de salida en `resultados_auditoria/`:
 
 ```text
 Proyecto/
@@ -764,23 +766,6 @@ Proyecto/
 | `src/auditoria/brute_force.py` | `fuerza_bruta(...)`, `combinaciones(...)` | Resuelve de forma exacta el problema generando recursivamente las combinaciones de tamaño creciente $k = 1, \ldots, n$ hasta hallar el primer subconjunto que cubra $\mathcal{U}$. |
 | `src/auditoria/greedy.py` | `greedy(...)` | Aproxima la cobertura mínima seleccionando iterativamente la interacción no elegida que maximiza el número de categorías nuevas cubiertas $|S_i \setminus K|$. |
 
-### 10.3 Diagrama de componentes e integración
-
-```mermaid
-flowchart LR
-    CLI["src/main.py\nMenú Principal (Opciones 2 y 3)"] --> UtilsLoad["auditoria/utils.py\ncargar_json()"]
-    UtilsLoad --> FB["auditoria/brute_force.py\nfuerza_bruta()"]
-    UtilsLoad --> GR["auditoria/greedy.py\ngreedy()"]
-    FB --> Fact["auditoria/utils.py\nfactibilidad()"]
-    GR --> Fact
-    FB --> Reg["auditoria/utils.py\nregistrar_resultado_auditoria()"]
-    GR --> Reg
-    Reg --> CSV["resultados_auditoria/\ncomparativa_rendimiento.csv"]
-    Reg --> JSONOut["resultados_auditoria/\n<dataset>_<metodo>.json"]
-```
-
----
-
 ## 11. Funcionamiento, algoritmos, estructuras de datos y condiciones de parada
 
 ### 11.1 Estructuras de datos principales
@@ -802,7 +787,7 @@ flowchart LR
   - *Parada prematura por infactibilidad:* Si `not factibilidad(universo, interacciones)`, termina inmediatamente retornando `None` en $O(n \cdot r)$.
   - *Parada por optimalidad:* Tan pronto como `universo.issubset(cubiertas)` es `True` para un tamaño $k$; dado que los tamaños se exploran en orden estrictamente creciente ($k = 1, 2, \ldots, n$), la primera cobertura encontrada tiene cardinalidad mínima garantizada $\mathrm{OPT} = k$.
   - *Agotamiento del espacio de búsqueda:* Si el ciclo externo supera $k = n$ sin hallar cobertura.
-- **Complejidad:** Tiempo $T_{\text{FB}}(n, r) = O(n \cdot r \cdot 2^n)$ en el peor caso y espacio $O\left(k \binom{n}{k}\right)$ para almacenar las combinaciones del nivel $k$ activo (deducción formal en [demostracion_np_dureza_set_cover.md](demostracion_np_dureza_set_cover.md)).
+- **Complejidad:** Tiempo $T_{\text{FB}}(n, r) = O(n \cdot r \cdot 2^n)$ en el peor caso y espacio $O\left(k \binom{n}{k}\right)$ para almacenar las combinaciones del nivel $k$ activo (deducción formal en `formalizacion_set_cover`).
 
 ### 11.3 Algoritmo Aproximado: Voraz / Greedy (`greedy.py`)
 
@@ -820,22 +805,6 @@ flowchart LR
   - *Parada por cobertura completa (condición normal):* El bucle `while` termina cuando `universo.issubset(cubiertas)` es `True`. Como en cada iteración se cubre al menos una categoría nueva ($|\Delta_{i^*}| \geq 1$), el bucle ejecuta a lo sumo $\min(n, r) \leq r$ iteraciones.
   - *Parada de seguridad:* Si en alguna iteración ninguna interacción restante aporta categorías nuevas (`mejor_interaccion is None`), el algoritmo aborta retornando `None`.
 - **Complejidad y garantía:** Tiempo $T_{\text{greedy}}(n, r) = O(n \cdot r^2)$ en el peor caso, espacio $O(n + r)$, y cota de aproximación armónica $\mathrm{SOL} \leq H_r \cdot \mathrm{OPT}$ con $H_r = \sum_{j=1}^{r} 1/j \leq \ln(r) + 1$ (Johnson, 1974; Chvátal, 1979).
-
-```mermaid
-flowchart TD
-    Start([Inicio Greedy]) --> CheckFact{"¿factibilidad(U, I)?"}
-    CheckFact -- "No" --> Infeasible["Imprimir INSTANCIA NO FACTIBLE y retornar None"]
-    CheckFact -- "Sí" --> Init["cubiertas = set()\nseleccionadas = []\nseleccionadas_set = set()"]
-    Init --> WhileLoop{"¿universo.issubset(cubiertas)?"}
-    WhileLoop -- "No" --> Scan["Recorrer (nombre, riesgos) no en seleccionadas_set\ny elegir el que maximice len(riesgos - cubiertas)"]
-    Scan --> Found{"¿mejor_interaccion != None?"}
-    Found -- "No" --> Abort["Retornar None"]
-    Found -- "Sí" --> Update["Agregar mejor_interaccion a seleccionadas y seleccionadas_set\ncubiertas.update(mejores_nuevos)"]
-    Update --> WhileLoop
-    WhileLoop -- "Sí" --> Save["registrar_resultado_auditoria() en CSV y JSON"]
-    Save --> End([Retornar seleccionadas])
-```
-
 ---
 
 ## 12. Uso del módulo de auditoría, formato de datos y salidas
@@ -959,4 +928,3 @@ Los siguientes elementos presentes en el JSON oficial no son consumidos todavía
 - **Variante 1 (Cobertura ponderada):** incorporar el campo `categorias_riesgo[].importancia` y/o los costos diferenciados de `etapas[].variaciones_auditoria` (`parcial` y `completa`), adaptando la regla de selección voraz por costo-efectividad y la cota $H_r$.
 - **Variante 2 (Optimización conjunta bajo presupuesto compartido):** integrar la decisión de aceleración (Parte I) y la de auditoría (Parte II) bajo el parámetro `presupuesto_conjunto_aceleracion_y_auditoria`.
 - **Variante 3 (Flujo con etapas en paralelo — DAG):** consumir la lista de aristas `flujo` (`origen` $\to$ `destino`) para calcular el camino crítico mediante orden topológico y programación dinámica en $O(n + m)$ antes de decidir la aceleración.
-- **Batería de experimentación asintótica:** generador de instancias sintéticas para $\geq 5$ tamaños crecientes de $n$ y gráficas comparativas entre el tiempo empírico medido y las curvas teóricas $T(n, B)$ y $T(n, r)$.
