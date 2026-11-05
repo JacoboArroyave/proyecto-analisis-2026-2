@@ -47,7 +47,7 @@ def fuerza_bruta(universo, interacciones):
         valor_fb = len(combinacion)
 
         # Nombre de la instancia (puedes ajustarlo si prefieres pasar el nombre del archivo de forma dinámica)
-        nombre_instancia = "datos1.json"
+        nombre_instancia = "datos_profe.json"
 
         # Guardar automáticamente los resultados usando tu módulo utils
         guardar_metrica_csv(

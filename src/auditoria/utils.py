@@ -5,7 +5,19 @@ import os
 directorio_actual = os.path.dirname(__file__)
 archivo_json = os.path.join(directorio_actual, "datos1.json")
 
+# Subir dos niveles hasta la raíz del proyecto
+directorio_raiz = os.path.dirname(os.path.dirname(directorio_actual))
+
+# Acceder al JSON dentro de data
+archivo_json = os.path.join(
+    directorio_raiz,
+    "data",
+    "entrada_G3_mochila_20_nodos.json"
+)
+
+
 def cargar_json():
+
     with open(archivo_json, "r", encoding="utf-8") as archivo:
         datos = json.load(archivo)
 
@@ -24,7 +36,7 @@ def cargar_json():
         )
 
         interacciones[nombre] = riesgos
-    
+
     return universo, interacciones
 
 def obtener_ruta_resultados():
