@@ -95,6 +95,10 @@ $$
 
 Ignorando factores constantes y la codificación de los identificadores de las etapas, el tamaño es
 
+$$\sum_{i=1}^{n} \lfloor\log_2 t_i\rfloor + \sum_{i=1}^{n} \lfloor\log_2 c_i\rfloor + \sum_{i=1}^{n} \lfloor\log_2 d_i\rfloor + \lfloor\log_2 B\rfloor + \lfloor\log_2 T_{meta}\rfloor.$$ 
+
+Esta expresión representa la suma de los bits necesarios para codificar los valores numéricos de la instancia; para valores iguales a cero se entiende la convención usual de reservar un bit para su representación. Si se consideran también los bits adicionales de longitud y los factores constantes de la codificación, se obtiene la cota superior asintótica
+
 $$N = O\left(n\log(M_t) + n\log(M_c) + n\log(M_d) + \log B + \log T_{meta}\right).$$
 
 Si se omite explícitamente el tamaño de $T_{meta}$ por estar determinado por el resto de la instancia o por considerarse parte del parámetro de consulta, puede expresarse como
@@ -359,13 +363,7 @@ $$
 DP[0][b] = 0 \quad \text{para todo } b \in \{0,\ldots,B\},
 $$
 
-porque sin etapas no puede obtenerse ninguna reducción, y equivalentemente
-
-$$
-DP[i][0] = 0 \quad \text{para todo } i,
-$$
-
-porque con presupuesto cero no se puede acelerar ninguna etapa con costo positivo.
+porque sin etapas no puede obtenerse ninguna reducción. No se introduce una condición base independiente para $DP[i][0]$: los estados con presupuesto cero se evalúan directamente mediante la recurrencia. Esto permite tratar de forma natural los casos borde en los que existan etapas con costo nulo ($c_i=0$), sin imponer una restricción adicional que pueda ocultar ese comportamiento.
 
 El resultado óptimo de reducción es $DP[n][B]$. La duración final óptima es
 
@@ -428,13 +426,19 @@ $$
 T_{\text{DP+traza}}(n,B) = \Theta(nB).
 $$
 
-La matriz `choices` tiene $n(B+1)$ posiciones booleanas. El vector `reductions` y la copia `previous` tienen $B+1$ posiciones cada uno. En consecuencia, el espacio utilizado es
+Si solo interesara obtener el valor de la reducción máxima, sin reconstruir el subconjunto de etapas, bastaría un arreglo unidimensional de tamaño $B+1$, recorrido en orden inverso para preservar la restricción 0/1. En ese caso, el espacio adicional sería
 
 $$
-S(n,B) = O(nB) + O(B) = O(nB).
+S_{valor}(B) = O(B).
 $$
 
-La parte $O(nB)$ es necesaria en esta implementación para reconstruir las decisiones mediante `choices` y conservar la traza completa.
+La implementación del dominio requiere más información: debe reconstruir el subconjunto óptimo mediante la matriz `choices` y generar una entrada `DpTraceEntry` para cada estado calculado como evidencia de auditoría. La matriz `choices` tiene $n(B+1)$ posiciones booleanas y la traza contiene $n(B+1)$ objetos. Por tanto, aunque el vector `reductions` y la copia `previous` solo requieren $O(B)$, la reconstrucción y la auditoría justifican teórica y arquitectónicamente un consumo dominante de
+
+$$
+S_{dominio}(n,B) = \Theta(nB) + \Theta(nB) + O(B) = \Theta(nB).
+$$
+
+En consecuencia, existe un trade-off explícito: $O(B)$ si solo se necesita el valor óptimo, frente a $\Theta(nB)$ cuando el contrato del dominio exige reconstrucción y trazabilidad completa.
 
 ### 4.4 Comportamiento pseudo-polinomial
 
