@@ -1,4 +1,4 @@
-# Análisis de Complejidad, Reducción de NP-Dureza y Arquitectura de Dominio
+# Análisis de Complejidad y Reducción de NP-Dureza
 
 ## Subproyecto 3: Aceleración de la Ruta Crítica bajo Presupuesto
 
@@ -483,41 +483,3 @@ La exactitud de la programación dinámica se justifica por inducción sobre $i$
 
 Al aplicar el paso hasta $i=n$ y $b=B$, se obtiene $DP[n][B]$, la máxima reducción posible bajo el presupuesto. En consecuencia, `OptimizeAcceleration` devuelve una solución exacta, no aproximada, y la reconstrucción mediante `choices` recupera un subconjunto de etapas que alcanza esa reducción.
 
----
-
-## 5. Arquitectura de dominio y separación de responsabilidades
-
-La solución sigue una arquitectura limpia en la que las dependencias apuntan hacia el dominio:
-
-```text
-Presentación (CLI)
-        |
-        v
-Infraestructura -- JsonScenarioReader
-        |
-        v
-Aplicación -- OptimizeAcceleration -- ScenarioReader (puerto)
-        |
-        v
-Dominio -- Stage, AccelerationScenario, DpTraceEntry, AccelerationResult
-```
-
-### 5.1 Dominio
-
-El dominio contiene las reglas esenciales del problema y no depende de JSON, archivos, consola ni bibliotecas externas. `Stage` protege sus invariantes; `AccelerationScenario` representa una instancia válida; los objetos de resultado y traza expresan los datos que la solución debe producir.
-
-### 5.2 Aplicación
-
-`OptimizeAcceleration` coordina el algoritmo de programación dinámica. Su entrada son entidades del dominio y su salida es `AccelerationResult`. No conoce la forma concreta en que se cargó el escenario, lo que permite reutilizarlo desde pruebas, una API, un notebook o una interfaz diferente.
-
-### 5.3 Puerto y adaptador de infraestructura
-
-`ScenarioReader` define el contrato requerido por la aplicación para obtener un `AccelerationScenario`. `JsonScenarioReader` implementa este contrato y traduce la entrada oficial `entrada_G3_mochila_20_nodos.json`.
-
-Los campos de auditoría presentes en la entrada oficial se ignoran en esta Parte 1; el adaptador extrae únicamente el presupuesto de aceleración y los atributos de aceleración de las etapas.
-
-### 5.4 Presentación
-
-La CLI configura el logging, solicita al adaptador la lectura del escenario y entrega el objeto resultante al caso de uso. La lógica de optimización no se duplica en la interfaz, y cambiar la fuente de entrada no obliga a modificar el dominio ni el algoritmo.
-
-Esta distribución respeta la responsabilidad única y la inversión de dependencias: cada componente tiene una razón principal para cambiar y los detalles externos dependen de las abstracciones internas, no al contrario.
