@@ -10,3 +10,7 @@ datos1.json,greedy,0.0008597373962402344,4
 datos1.json,greedy,0.000576019287109375,4
 datos1.json,fuerza_bruta,0.08130955696105957,4
 datos1.json,greedy,0.0007894039154052734,4
+datos1.json,fuerza_bruta,0.13912153244018555,4
+datos_profe.json,fuerza_bruta,0.11273741722106934,4
+datos_profe.json,fuerza_bruta,0.5016701221466064,4
+datos1.json,greedy,0.0019054412841796875,4
