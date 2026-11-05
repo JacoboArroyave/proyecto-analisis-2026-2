@@ -28,7 +28,7 @@ from auditoria.utils import cargar_json
 
 
 def mostrar_menu() -> None:
-    print("\n================ SANTIAGO / ADA - MENÚ PRINCIPAL ================")
+    print("\n================ ADA - MENÚ PRINCIPAL ================")
     print("1. Optimización estándar (Lógica original de la CLI)")
     print("2. Algoritmo de Fuerza Bruta (Auditoría)")
     print("3. Algoritmo Greedy / Voraz (Auditoría)")
