@@ -1,5 +1,5 @@
 {
-    "instancia": "datos_profe.json",
+    "instancia": "entrada_G3",
     "algoritmo": "fuerza_bruta",
     "interacciones": [
         "E01",
