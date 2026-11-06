@@ -29,7 +29,7 @@ from auditoria.utils import cargar_json
 
 def mostrar_menu() -> None:
     print("\n================ ADA - MENÚ PRINCIPAL ================")
-    print("1. Optimización estándar (Lógica original de la CLI)")
+    print("1. Aceleracion bajo presupuesto")
     print("2. Algoritmo de Fuerza Bruta (Auditoría)")
     print("3. Algoritmo Greedy / Voraz (Auditoría)")
     print("0. Salir")
