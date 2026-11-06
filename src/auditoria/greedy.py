@@ -7,10 +7,8 @@ from auditoria.utils import (
 
 
 def greedy(universo, interacciones, nombre_instancia=archivo_json):
-    # Iniciar cronómetro para medir el tiempo de ejecución de greedy
     inicio_tiempo = perf_counter()
 
-    # Verificar factibilidad antes de ejecutar
     if not factibilidad(universo, interacciones):
         print("INSTANCIA NO FACTIBLE")
         print("Existen categorías de riesgo sin cobertura.")
@@ -19,7 +17,6 @@ def greedy(universo, interacciones, nombre_instancia=archivo_json):
     print("INSTANCIA FACTIBLE")
     print("Todas las categorías tienen cobertura.\n")
 
-    # Inicializar solución (lista para orden y set para búsqueda en O(1) promedio)
     cubiertas = set()
     seleccionadas = []
     seleccionadas_set = set()

@@ -9,10 +9,8 @@ from auditoria.utils import (
 
 
 def fuerza_bruta(universo, interacciones, nombre_instancia=archivo_json):
-    # Iniciar cronómetro para medir el tiempo de ejecución de fuerza bruta
     inicio_tiempo = perf_counter()
 
-    # Verificar factibilidad antes de explorar combinaciones
     if not factibilidad(universo, interacciones):
         print("INSTANCIA NO FACTIBLE")
         print("Existen categorías de riesgo sin cobertura.")
@@ -21,12 +19,10 @@ def fuerza_bruta(universo, interacciones, nombre_instancia=archivo_json):
     nombres = list(interacciones.keys())
     n = len(nombres)
 
-    # Todas las combinaciones ordenadas por tamaño (k)
     for k in range(1, n + 1):
         print(f"\nProbando combinaciones de tamaño {k}")
 
         for combinacion in combinaciones(nombres, k):
-            # Unir las categorías cubiertas
             cubiertas = set()
 
             for nombre in combinacion:
@@ -34,7 +30,6 @@ def fuerza_bruta(universo, interacciones, nombre_instancia=archivo_json):
 
             # print(combinacion, "->", cubiertas)
 
-            # Comprobar si cubrimos todo el universo
             if universo.issubset(cubiertas):
                 print("\nSOLUCIÓN ÓPTIMA ENCONTRADA")
                 print("Interacciones:", combinacion)
